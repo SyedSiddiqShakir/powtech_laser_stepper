@@ -145,7 +145,7 @@ def console_handler(event):
     if event in (win32con.CTRL_SHUTDOWN_EVENT, win32con.CTRL_LOGOFF_EVENT):
         print("Shutdown/Logoff detected. Saving position...")
         controller.save_position_to_eeprom()
-        time.sleep(0.5) # giving the save command time to send and process
+        #time.sleep(0.5) # giving the save command time to send and process #removed it to add the delay in save function
         return True # Indicate that we've handled it (~handshake)
     return False
 
