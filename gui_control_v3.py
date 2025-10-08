@@ -18,6 +18,10 @@ class StepperController:
     def __init__(self, port='COM5', baudrate=115200):
         self.arduino = None
         self.pos = 0 
+
+        self.MIN_POS_STEPS = 0
+        self.MAX_POS_STEPS = int(self.MAX_RANGE_MM * self.STEPS_PER_MM) #50mm*3200 steps/mm = 160,000 steps
+
         self.command_queue = deque()
         self.is_busy = False
         try:
@@ -37,14 +41,29 @@ class StepperController:
 
     def move_relative_mm(self, distance_mm):
         steps_to_move = int(distance_mm * self.STEPS_PER_MM)
-        self.pos += steps_to_move
+
+        new_pos_steps = self.pos + steps_to_move #calc potential new pos
+        clamped_pos_steps =max(self.MIN_POS_STEPS, min(self.MAX_POS_STEPS, new_pos_steps))
+
+        if self.pos == clamped_pos_steps:
+            print("Max limit reached, no move!")
+            return
+
+        self.pos = clamped_pos_steps
         self.command_queue.append(self.pos)
         self.update_display()
 
     def move_to_mm(self, target_mm):
         if target_mm is not None:
             target_steps = int(target_mm * self.STEPS_PER_MM)
-            self.pos = target_steps
+
+            clamped_target_steps = max(self.MIN_POS_STEPS, min(self.MAX_POS_STEPS, target_steps))
+
+            if self.pos == clamped_target_steps:
+                print("Max limit reached (or) already at target, no move!")
+                return
+
+            self.pos = clamped_target_steps
             self.command_queue.append(self.pos)
             self.update_display()
 
