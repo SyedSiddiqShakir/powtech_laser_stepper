@@ -101,7 +101,7 @@ class StepperController:
                 try:
                     line = self.arduino.readline().decode('ascii').strip()
                     if line == 'SAVED':
-                        print("Confirmation received: Position saved")
+                        print(f"Confirmation received: Position saved ({self.pos} steps)")
                         return
                 except (UnicodeDecodeError, ValueError):
                     pass
