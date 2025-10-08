@@ -4,7 +4,6 @@ import wx
 class My_Frame(wx.Frame):
 
     def __init__(self, *args, **kw):
-        # ensure the parent's __init__ is called
         super(My_Frame, self).__init__(*args, **kw)
 
         # create a panel in the frame
@@ -64,17 +63,17 @@ class My_Frame(wx.Frame):
 
 
     def OnExit(self, event):
-        """Close the frame, terminating the application."""
+        # Close the frame, terminating the application
         self.Close(True)
 
 
     def OnHello(self, event):
-        """Say hello to the user."""
+        #Say hello to the user
         wx.MessageBox("welcome again to laser control")
 
 
     def OnAbout(self, event):
-        """Display an About Dialog"""
+        #Display an About Dialog
         wx.MessageBox("DO you wanna control a laser?",
                       wx.OK|wx.ICON_INFORMATION)
 

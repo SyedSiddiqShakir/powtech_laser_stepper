@@ -4,8 +4,8 @@ import dearpygui.dearpygui as dpg
 import sys
 from collections import deque
 
-#direction change
-#speed reduce
+#direction change DONE
+#speed reduce DONE
 
 #grip
 #wobble

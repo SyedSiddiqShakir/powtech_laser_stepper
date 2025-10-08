@@ -11,10 +11,10 @@ void setup() {
   Serial.begin(115200);
   
   stepper.setEnablePin(ENABLE_PIN);
-  stepper.setPinsInverted(false, false, true);
+  stepper.setPinsInverted(true, false, true);
   
-  stepper.setMaxSpeed(2000.0);
-  stepper.setAcceleration(1000.0);
+  stepper.setMaxSpeed(1000.0);
+  stepper.setAcceleration(500.0);
   
   // Load the last saved position from EEPROM on startup.
   // This is good practice for power cycles.
