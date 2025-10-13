@@ -265,9 +265,9 @@ with dpg.window(label="Control Panel", tag="main_window"):
     dpg.add_separator()
     dpg.add_text("Preset Positions")
     with dpg.group(horizontal=True):
-        dpg.add_button(label="Go to Bottom", callback=lambda: controller.move_to_mm(0.0, tag="preset_start_btn"))
-        dpg.add_button(label="Go to Middle", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM / 2.0, tag="preset_mid_btn"))
-        dpg.add_button(label="Go to Top", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM, tag="preset_end_btn"))
+        dpg.add_button(label="Go to Bottom", callback=lambda: controller.move_to_mm(0.0), tag="preset_start_btn")
+        dpg.add_button(label="Go to Middle", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM / 2.0), tag="preset_mid_btn")
+        dpg.add_button(label="Go to Top", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM), tag="preset_end_btn")
 
 
     dpg.add_separator()
