@@ -242,7 +242,7 @@ with dpg.window(label="Control Panel", tag="main_window"):
     dpg.bind_font(big_font)
     dpg.add_progress_bar(tag="pos_progress_bar", overlay="0.00 / 50.0 mm", width=-1)
 
-    dpg.add_text("Status: Init..", tag = "status_indicator")
+    dpg.add_text("Status: Ready", tag = "status_indicator")
 
     dpg.add_separator()
     dpg.add_text("Relative Move", color=(128,0,128))
