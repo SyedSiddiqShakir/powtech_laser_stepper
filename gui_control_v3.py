@@ -28,7 +28,7 @@ class StepperController:
         self.movement_controls = [
             "relative_left_btn", "relative_right_btn", "custom_mm_input", "absolute_go_btn",
             "absolute_mm_input", "preset_start_btn", "preset_mid_btn",
-            "preset_end_btn", "calibrate_btn"
+            "preset_end_btn", "calibrate_btn", "preset_altmid_btn"
         ]
 
         try:
@@ -263,16 +263,19 @@ with dpg.window(label="Control Panel", tag="main_window"):
         dpg.add_button(label="Go", callback=lambda: controller.move_to_mm(dpg.get_value("absolute_mm_input")))
 
     dpg.add_separator()
-    dpg.add_text("Preset Positions")
+    dpg.add_text("Preset Positions", color=(128,0,128))
+    with dpg.tooltip(dpg.last_item()):
+        dpg.add_text("Move to a common position")
     with dpg.group(horizontal=True):
-        dpg.add_button(label="Go to Bottom", callback=lambda: controller.move_to_mm(0.0), tag="preset_start_btn")
-        dpg.add_button(label="Go to Middle", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM / 2.0), tag="preset_mid_btn")
-        dpg.add_button(label="Go to Top", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM), tag="preset_end_btn")
+        dpg.add_button(label="0 mm", callback=lambda: controller.move_to_mm(0.0), tag="preset_start_btn", width=150)
+        dpg.add_button(label="12.5 mm", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM / 4.0), tag="preset_altmid_btn", width=150)
+        dpg.add_button(label="25 mm", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM / 2.0), tag="preset_mid_btn", width=150)
+        dpg.add_button(label="50 mm", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM), tag = "preset_end_btn", width=150)
 
 
     dpg.add_separator()
     with dpg.group(horizontal=True):
-        dpg.add_button(label="STOP", callback=controller.stop, width=-1, height=150)
+        dpg.add_button(label="STOP", callback=controller.stop, width=-1, height=80)
 
 
     dpg.add_separator()
@@ -285,9 +288,9 @@ with dpg.window(label="Control Panel", tag="main_window"):
         dpg.add_button(label="Load Position from Device", callback=controller.load_position_from_eeprom)
 
 controller.update_display()
-dpg.create_viewport(title="Stepper Motor Control", width=900, height=700)
+dpg.create_viewport(title="Stepper Motor Control", width=1000, height=1000)
 dpg.setup_dearpygui()
-dpg.show_viewport()
+dpg.show_viewport() 
 dpg.set_primary_window("main_window", True)
 
 # main loop
