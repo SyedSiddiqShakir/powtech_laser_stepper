@@ -1,20 +1,20 @@
 # Stepper Motor Control GUI
 
-A robust(hopefully), Python-based graphical user interface for the precise control of a stepper motor via an Arduino. This application provides real-time feedback and memory features for reliable, long-term positioning tasks.
+A Python-based graphical user interface for the precise control of a stepper motor via Arduino. This application provides real-time feedback and memory features for reliable, long-term positioning tasks.
 
-![GUI Screenshot](image_686564.png)
+![GUI Screenshot](gui_ss.png)
 
 ---
 
 ## Features
 
-* ** Absolute & Relative Positioning:** Move the motor *to* a specific millimeter position or *by* a certain amount.
-* ** Real-time Visual Feedback:** A large text display and a progress bar gauge show the current position within the 0-50 mm range.
-* ** Manual Position Calibration:** If the physical position drifts, you can instantly recalibrate the system's coordinates without any motor movement.
-* ** Manual EEPROM Control:** Manually **Save** the current position to the Arduino's non-volatile memory and **Load** it back on demand. This prevents EEPROM wear from constant writes.
-* ** Robust Command Queue:** Rapid inputs are queued and executed sequentially, ensuring no commands are lost and the GUI remains responsive.
-* ** Emergency Stop:** Immediately halt any ongoing movement.
-* ** Auto-Save on Shutdown:** (Windows Only) Automatically saves the motor's position to the device EEPROM if the PC is shut down or put to sleep, preventing loss of position.
+* **Absolute & Relative Positioning:** Move the motor *to* a specific millimeter position or *by* a certain amount.
+* **Real-time Visual Feedback:** A text display and a progress bar show the current position within the 0-50 mm range.
+* **Manual Position Calibration:** If the physical position drifts, you can instantly recalibrate the system's coordinates without any motor movement.
+* **Manual EEPROM Control:** Manually **Save** the current position to the Arduino's non-volatile memory and **Load** it back on demand. This prevents EEPROM wear from constant writes.
+* **Robust Command Queue:** Rapid inputs are queued and executed sequentially, ensuring no commands are lost and the GUI remains responsive.
+* **Emergency Stop:** Immediately halt any ongoing movement.
+* **Auto-Save on Computer Sleep:** Automatically saves the motor's position to the device EEPROM if the PC is put to sleep, preventing loss of position.
 
 ---
 
@@ -22,10 +22,10 @@ A robust(hopefully), Python-based graphical user interface for the precise contr
 
 ### Hardware
 * An Arduino UNO R3
-* A stepper motor QMOT QSH4218-51-10-049
+* A stepper motor (QMOT QSH4218-51-10-049)
 * A DRV8825 stepper motor driver 
 * A CNC Shield
-* A separate power supply for the stepper motor (variable preferred)
+* A separate 12V DC power supply for the stepper motor (variable voltage preferred)
 
 ### Software
 * [Arduino IDE](https://www.arduino.cc/en/software)
@@ -39,10 +39,11 @@ A robust(hopefully), Python-based graphical user interface for the precise contr
     win32con,
     win32gui,
     deque,
-    wxpython
+    wxpython,
+    pyinstaller
 ]
 * Required Arduino libraries: [
-    Accelstepper
+    Accelstepper  #huge thanks
 ]
 
 ## Usage
@@ -53,9 +54,9 @@ A robust(hopefully), Python-based graphical user interface for the precise contr
     ```python
     controller = StepperController(port='COM5')
     ```
-4.  Run the main Python script from your terminal:
+4.  Run the main executable from the dist folder:
     ```bash
-    python your_script_name.py
+    gui_control_v3.exe
     ```
 
 ---
