@@ -24,6 +24,13 @@ class StepperController:
 
         self.command_queue = deque()
         self.is_busy = False
+
+        self.movement_controls = [
+            "relative_left_btn", "relative_right_btn", "custom_mm_input", "absolute_go_btn",
+            "absolute_mm_input", "preset_start_btn", "preset_mid_btn",
+            "preset_end_btn", "calibrate_btn"
+        ]
+
         try:
             self.arduino = serial.Serial(port, baudrate, timeout=0.1)
             print(f"Successfully connected to {port}.")
@@ -71,9 +78,18 @@ class StepperController:
         if not self.is_busy and self.command_queue:
             target_pos_steps = self.command_queue.popleft() 
             self.is_busy = True
+            self._update_status()
+            for tag in self.movement_controls:
+                if dpg.does_item_exist(tag):
+                    dpg.configure_item(tag, enabled=False)
             self.send_command('M', target_pos_steps)
 
     def update(self):
+        
+        if self.arduino and not self.arduino.is_open:
+            self.arduino = None
+            self._update_status()
+
         if self.arduino and self.arduino.in_waiting > 0:
             try:
                 line = self.arduino.readline().decode('ascii').strip()
@@ -84,10 +100,15 @@ class StepperController:
                     print(f"Confirmation: Position loaded from EEPROM ({self.pos} steps)")
                 elif line == "OK":
                     self.is_busy = False
+                    self._update_status()
+                    for tag in self.movement_controls:
+                        if dpg.does_item_exist(tag):
+                            dpg.configure_item(tag, enabled=True)
                 elif line == "SAVED":
                     print(f"Confirmation: Position successfully saved to device EEPROM. ({self.pos})")
-            except (UnicodeDecodeError, ValueError):
-                pass
+            except (UnicodeDecodeError, ValueError, serial.SerialException):
+                self.arduino = None #connection lost
+                self._update_status()
         self._process_queue()
         
     def update_display(self):
@@ -104,6 +125,17 @@ class StepperController:
         self.command_queue.clear()
         self.send_command('S')
         self.is_busy = False
+
+    def _update_status(self):
+        if not dpg.is_dearpygui_running(): return
+        status_widget = "status_indicator"
+        if dpg.does_item_exist(status_widget):
+            if not self.arduino or not self.arduino.is_open:
+                dpg.set_value(status_widget, "Status: Disconnected")
+            elif self.is_busy:
+                dpg.set_value(status_widget, "Status: Moving...")
+            else:
+                dpg.set_value(status_widget, "Status: Idle")
         
     def save_position_to_eeprom(self):
 
@@ -209,6 +241,9 @@ with dpg.window(label="Control Panel", tag="main_window"):
         dpg.add_text("0.000 mm", tag="main_pos_display")
     dpg.bind_font(big_font)
     dpg.add_progress_bar(tag="pos_progress_bar", overlay="0.00 / 50.0 mm", width=-1)
+
+    dpg.add_text("Status: Init..", tag = "status_indicator")
+
     dpg.add_separator()
     dpg.add_text("Relative Move", color=(128,0,128))
     with dpg.tooltip(dpg.last_item()):
@@ -217,6 +252,8 @@ with dpg.window(label="Control Panel", tag="main_window"):
         dpg.add_button(label="<-- Left", callback=lambda: controller.move_relative_mm(-dpg.get_value("custom_mm")))
         dpg.add_input_float(tag="custom_mm", default_value=1.0, width=240, label="mm", format="%.3f", step=0.1)
         dpg.add_button(label="Right -->", callback=lambda: controller.move_relative_mm(dpg.get_value("custom_mm")))
+
+
     dpg.add_separator()
     dpg.add_text("Absolute Move", color=(128, 0, 128))
     with dpg.tooltip(dpg.last_item()):
@@ -224,9 +261,20 @@ with dpg.window(label="Control Panel", tag="main_window"):
     with dpg.group(horizontal=True):
         dpg.add_input_float(tag="absolute_mm_input", default_value=25.0, label="Go to (mm)", format="%.3f", step=1.0)
         dpg.add_button(label="Go", callback=lambda: controller.move_to_mm(dpg.get_value("absolute_mm_input")))
+
+    dpg.add_separator()
+    dpg.add_text("Preset Positions")
+    with dpg.group(horizontal=True):
+        dpg.add_button(label="Go to Bottom", callback=lambda: controller.move_to_mm(0.0, tag="preset_start_btn"))
+        dpg.add_button(label="Go to Middle", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM / 2.0, tag="preset_mid_btn"))
+        dpg.add_button(label="Go to Top", callback=lambda: controller.move_to_mm(controller.MAX_RANGE_MM, tag="preset_end_btn"))
+
+
     dpg.add_separator()
     with dpg.group(horizontal=True):
         dpg.add_button(label="STOP", callback=controller.stop, width=-1, height=150)
+
+
     dpg.add_separator()
     dpg.add_text("Position Memory", color=(128,0,128))
     with dpg.tooltip(dpg.last_item()):
