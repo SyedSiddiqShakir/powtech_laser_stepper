@@ -249,9 +249,9 @@ with dpg.window(label="Control Panel", tag="main_window"):
     with dpg.tooltip(dpg.last_item()):
         dpg.add_text("Moves the desired Distance")
     with dpg.group(horizontal=True):
-        dpg.add_button(label="<-- Left", callback=lambda: controller.move_relative_mm(-dpg.get_value("custom_mm")))
+        dpg.add_button(label="<--", callback=lambda: controller.move_relative_mm(-dpg.get_value("custom_mm")))
         dpg.add_input_float(tag="custom_mm", default_value=1.0, width=240, label="mm", format="%.3f", step=0.1)
-        dpg.add_button(label="Right -->", callback=lambda: controller.move_relative_mm(dpg.get_value("custom_mm")))
+        dpg.add_button(label="-->", callback=lambda: controller.move_relative_mm(dpg.get_value("custom_mm")))
 
 
     dpg.add_separator()
@@ -288,7 +288,7 @@ with dpg.window(label="Control Panel", tag="main_window"):
         dpg.add_button(label="Load Position from Device", callback=controller.load_position_from_eeprom)
 
 controller.update_display()
-dpg.create_viewport(title="Stepper Motor Control", width=1000, height=1000)
+dpg.create_viewport(title="Stepper Motor Control", width=1000, height=750)
 dpg.setup_dearpygui()
 dpg.show_viewport() 
 dpg.set_primary_window("main_window", True)
