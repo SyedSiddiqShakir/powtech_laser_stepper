@@ -9,17 +9,19 @@ AccelStepper stepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 
 void setup() {
   Serial.begin(115200);
+  pinMode(ENABLE_PIN, OUTPUT);
   
   stepper.setEnablePin(ENABLE_PIN);
-  stepper.setPinsInverted(true, false, true);
+  stepper.setPinsInverted(false, false, true); // Original direction
   
-  stepper.setMaxSpeed(1000.0);
-  stepper.setAcceleration(500.0);
+  digitalWrite(ENABLE_PIN, HIGH); 
+
+  stepper.setMaxSpeed(2000.0); // Original speed
+  stepper.setAcceleration(1000.0);
   
-  // Load the last saved position from EEPROM on startup.
-  // This is good practice for power cycles.
-  loadPositionFromEEPROM();
-  stepper.disableOutputs();
+  long saved_pos;
+  EEPROM.get(0, saved_pos);
+  stepper.setCurrentPosition(saved_pos);
 }
 
 void loop() {
@@ -27,42 +29,29 @@ void loop() {
     char cmd = Serial.read();
 
     switch (cmd) {
-      case 'M': // Move to an absolute position
-        delay(5);
+      case 'M':
+        delay(5); 
         if (Serial.available() > 0) {
           long target_steps = Serial.parseInt();
           moveToPoint(target_steps);
         }
         break;
-      
-      case 'C': 
-        delay(5);
-        if (Serial.available() > 0) {
-          long new_current_steps = Serial.parseInt();
-          stepper.setCurrentPosition(new_current_steps);
-        }
-        break;
-        
-      case 'S': // Stop motor immediately
+      case 'S':
         stopMotor();
         break;
-        
-      case 'P': // Persist (save) current position to EEPROM
-        savePositionToEEPROM();
+      case 'P':
+        savePositionToEEPROM(); // This function now sends "SAVED"
         break;
-        
-      case 'L': 
-        loadPositionFromEEPROM();
+      case 'R':
+        retrievePosition();
         break;
     }
     while (Serial.available() > 0) Serial.read();
   }
 }
 
-// --- Command Functions ---
-
 void moveToPoint(long absolute_steps) {
-  stepper.enableOutputs();
+  stepper.enableOutputs(); 
   stepper.moveTo(absolute_steps);
   
   while (stepper.distanceToGo() != 0) {
@@ -76,7 +65,7 @@ void moveToPoint(long absolute_steps) {
   }
   
   stepper.runToPosition();
-  stepper.disableOutputs();
+  stepper.disableOutputs(); 
   Serial.println("OK"); // Handshake to confirm move is done
 }
 
@@ -89,16 +78,11 @@ void stopMotor() {
 void savePositionToEEPROM() {
   long current_pos = stepper.currentPosition();
   EEPROM.put(0, current_pos);
-  // Optional: Send a confirmation back
-  Serial.println("SAVED"); 
+  Serial.println("SAVED"); // Handshake to confirm save is done
 }
 
-void loadPositionFromEEPROM() {
-  long pos_from_eeprom;
-  EEPROM.get(0, pos_from_eeprom);
-  // Set the stepper's internal counter to this value
-  stepper.setCurrentPosition(pos_from_eeprom);
-  // Report this value back to Python so it can sync up
+void retrievePosition() {
+  long current_pos = stepper.currentPosition();
   Serial.print("POS:");
-  Serial.println(pos_from_eeprom);
+  Serial.println(current_pos);
 }

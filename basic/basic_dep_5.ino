@@ -11,13 +11,12 @@ void setup() {
   Serial.begin(115200);
   
   stepper.setEnablePin(ENABLE_PIN);
-  stepper.setPinsInverted(true, false, true);
+  stepper.setPinsInverted(false, false, true); // Original direction
   
-  stepper.setMaxSpeed(1000.0);
-  stepper.setAcceleration(500.0);
+  stepper.setMaxSpeed(2000.0); // Original speed
+  stepper.setAcceleration(1000.0);
   
   // Load the last saved position from EEPROM on startup.
-  // This is good practice for power cycles.
   loadPositionFromEEPROM();
   stepper.disableOutputs();
 }
@@ -35,7 +34,7 @@ void loop() {
         }
         break;
       
-      case 'C': 
+      case 'C': // Calibrate command
         delay(5);
         if (Serial.available() > 0) {
           long new_current_steps = Serial.parseInt();
@@ -51,7 +50,7 @@ void loop() {
         savePositionToEEPROM();
         break;
         
-      case 'L': 
+      case 'L': // Load position from EEPROM
         loadPositionFromEEPROM();
         break;
     }
@@ -77,7 +76,7 @@ void moveToPoint(long absolute_steps) {
   
   stepper.runToPosition();
   stepper.disableOutputs();
-  Serial.println("OK"); // Handshake to confirm move is done
+  Serial.println("OK"); // Handshake
 }
 
 void stopMotor() {
@@ -89,8 +88,7 @@ void stopMotor() {
 void savePositionToEEPROM() {
   long current_pos = stepper.currentPosition();
   EEPROM.put(0, current_pos);
-  // Optional: Send a confirmation back
-  Serial.println("SAVED"); 
+  Serial.println("SAVED"); // Handshake
 }
 
 void loadPositionFromEEPROM() {
