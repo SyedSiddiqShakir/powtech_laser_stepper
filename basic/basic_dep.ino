@@ -11,7 +11,6 @@ void setup() {
   Serial.begin(115200);
   pinMode(ENABLE_PIN, OUTPUT);
   
-  // ⭐️ FIX #1: Explicitly set the enable pin for the library.
   stepper.setEnablePin(ENABLE_PIN);
   stepper.setPinsInverted(false, false, true); // Invert the enable pin signal (HIGH = disabled)
   
@@ -31,15 +30,14 @@ void loop() {
 
     switch (cmd) {
       case 'M':
-        // ⭐️ FIX #2: Wait briefly for the rest of the serial data to arrive.
         delay(5); // Small delay to ensure the full number is in the buffer
         if (Serial.available() > 0) {
           long target_steps = Serial.parseInt();
           moveToPoint(target_steps);
         }
         break;
-      // ... (rest of the cases are fine)
-      case 'S':
+
+        case 'S':
         stopMotor();
         break;
       case 'P':
@@ -54,7 +52,6 @@ void loop() {
 }
 
 void moveToPoint(long absolute_steps) {
-  // The library now controls the enable pin automatically.
   stepper.enableOutputs(); // Enable the driver
   
   stepper.moveTo(absolute_steps);
@@ -69,7 +66,6 @@ void moveToPoint(long absolute_steps) {
     }
   }
   
-  // Wait until the movement is truly finished before disabling.
   stepper.runToPosition();
   stepper.disableOutputs(); // Disable the driver
 }
@@ -80,7 +76,6 @@ void stopMotor() {
   stepper.disableOutputs();
 }
 
-// ... (savePosition and retrievePosition are fine)
 void savePosition() {
   long current_pos = stepper.currentPosition();
   EEPROM.put(0, current_pos);

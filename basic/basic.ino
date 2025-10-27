@@ -16,8 +16,6 @@ void setup() {
   stepper.setMaxSpeed(1000.0);
   stepper.setAcceleration(500.0);
   
-  // Load the last saved position from EEPROM on startup.
-  // This is good practice for power cycles.
   loadPositionFromEEPROM();
   stepper.disableOutputs();
 }
@@ -59,7 +57,6 @@ void loop() {
   }
 }
 
-// --- Command Functions ---
 
 void moveToPoint(long absolute_steps) {
   stepper.enableOutputs();
@@ -89,14 +86,12 @@ void stopMotor() {
 void savePositionToEEPROM() {
   long current_pos = stepper.currentPosition();
   EEPROM.put(0, current_pos);
-  // Optional: Send a confirmation back
   Serial.println("SAVED"); 
 }
 
 void loadPositionFromEEPROM() {
   long pos_from_eeprom;
   EEPROM.get(0, pos_from_eeprom);
-  // Set the stepper's internal counter to this value
   stepper.setCurrentPosition(pos_from_eeprom);
   // Report this value back to Python so it can sync up
   Serial.print("POS:");
