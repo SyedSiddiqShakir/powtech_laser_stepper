@@ -4,7 +4,7 @@ import dearpygui.dearpygui as dpg
 import sys
 import win32api
 import win32con
-import win32gui
+#import win32gui
 from collections import deque
 import configparser
 from datetime import datetime
@@ -221,6 +221,8 @@ class StepperController:
             self.update_display()
             dpg.hide_item("set_pos_window")
 
+
+dpg.create_context()
 # init controller
 controller = StepperController(port=port, baudrate=baud)
 
@@ -232,9 +234,18 @@ def console_handler(event):
         #time.sleep(0.5) # giving the save command time to send and process #removed it to add the delay in save function
         return True # Indicate that we've handled it (~handshake)
     return False
-
 win32api.SetConsoleCtrlHandler(console_handler, True)
 
+# font(optional) and main window setup
+try:
+    with dpg.font_registry():
+        big_font = dpg.add_font("C:/Windows/Fonts/segoeui.ttf", 40)
+except Exception as e:
+    big_font = dpg.add_font(dpg.get_default_font(), 20)
+
+dpg.create_viewport(title="Stepper Motor Control", width=1000, height=750)
+dpg.setup_dearpygui()
+"""
 def wnd_proc(hwnd, msg, wparam, lparam):
     if msg == win32con.WM_POWERBROADCAST:
         if wparam == win32con.PBT_APMSUSPEND:
@@ -250,23 +261,25 @@ wc.lpszClassName = 'ShutdownHandler'
 wc.lpfnWndProc = wnd_proc
 class_atom = win32gui.RegisterClass(wc)
 hwnd = win32gui.CreateWindow(class_atom, "Shutdown Handler", 0, 0, 0, 0, 0, 0, 0, 0, None)
+"""
 
 # GUI Setup
-dpg.create_context()
 
+"""
 if controller.arduino is None:
     dpg.destroy_context()
     # Clean up the invisible window before exiting
     win32gui.DestroyWindow(hwnd)
     win32gui.UnregisterClass(class_atom, None)
     sys.exit()
-
-# font(optional) and main window setup
-try:
-    with dpg.font_registry():
-        big_font = dpg.add_font("C:/Windows/Fonts/segoeui.ttf", 40)
-except Exception as e:
-    big_font = dpg.add_font(dpg.get_default_font(), 20)
+    """
+if controller.arduino is None:
+    dpg.add_window(label="Connection Error", modal=True, show=True, tag="connection_error_window", width=400)
+    dpg.add_text("Failed to connect to Arduino on the specified port.")
+    dpg.add_text(f"Please check config.ini (Port: {port}) and ensure the device is connected.")
+    dpg.add_button(label="OK", callback=lambda: dpg.stop_dearpygui())
+    dpg.start_dearpygui()
+    sys.exit()
 
 with dpg.window(label="Control Panel", tag="main_window"):
     with dpg.group(horizontal=True):
@@ -324,16 +337,19 @@ with dpg.window(label="Control Panel", tag="main_window"):
     dpg.add_text("Log")
     dpg.add_input_text(tag="log_window", multiline=True, readonly=True, width=-1, height=150)
 
-controller.update_display()
-dpg.create_viewport(title="Stepper Motor Control", width=1000, height=750)
-dpg.setup_dearpygui()
-dpg.show_viewport() 
+#prim window
 dpg.set_primary_window("main_window", True)
+dpg.show_viewport()
+
+controller.update_display()
+controller._update_status()
+controller.load_position_from_eeprom()
+
 
 # main loop
 while dpg.is_dearpygui_running():
     # pumping the Windows messages inside the main GUI loop.
-    win32gui.PumpWaitingMessages()
+    #win32gui.PumpWaitingMessages()
     
     controller.update()
     dpg.render_dearpygui_frame()
@@ -343,6 +359,6 @@ controller.close()
 dpg.destroy_context()
 
 # cleaning the invisible window at last to still account for runtime event possibilities
-win32gui.DestroyWindow(hwnd)
-win32gui.UnregisterClass(class_atom, None)
+#win32gui.DestroyWindow(hwnd)
+#win32gui.UnregisterClass(class_atom, None)
 print("Application closed.")
