@@ -7,6 +7,7 @@ import win32con
 import win32gui
 from collections import deque
 import configparser
+from datetime import datetime
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -34,6 +35,8 @@ class StepperController:
         self.command_queue = deque()
         self.is_busy = False
 
+        self.log_messages = deque(maxlen=100)
+
         self.movement_controls = [
             "relative_left_btn", "relative_right_btn", "custom_mm_input", "absolute_go_btn",
             "absolute_mm_input", "preset_start_btn", "preset_mid_btn",
@@ -42,18 +45,31 @@ class StepperController:
 
         try:
             self.arduino = serial.Serial(port, baudrate, timeout=0.1)
-            print(f"Successfully connected to {port}.")
+            self._log(f"Successfully conntected to {port} at {baudrate} baudrate")
             time.sleep(2)
+
         except serial.SerialException as e:
-            print(f"Error: Could not open port {port}. {e}")
+            self._log(f"Could not open the port {port}. {e}")
             self.arduino = None
+
+    def _log(self, message):
+        #sends a timestamped message to the display section
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        log_entry = f"[{timestamp}] {message}"
+        self.log_messages.append(log_entry)
+
+        if dpg.is_dearpygui_running() and dpg.does_item_exist("log_window"):
+            log_text = "\n".join(self.log_messages)
+            dpg.set_value("log_window", log_text)
+            #dpg.set_y_scroll("log_window", dpg.get_y_scroll_max("log_window"))
 
     def send_command(self, cmd, value=None):
         if self.arduino and self.arduino.is_open:
             message = f"{cmd}\n" if value is None else f"{cmd}{int(value)}\n"
+            self._log(f"->{message.strip()}")
             self.arduino.write(message.encode('ascii'))
         else:
-            print("Error: Arduino not connected.")
+            self._log(f"Error: Arduino not connected.")
 
     def move_relative_mm(self, distance_mm):
         steps_to_move = int(distance_mm * self.STEPS_PER_MM)
@@ -62,12 +78,13 @@ class StepperController:
         clamped_pos_steps =max(self.MIN_POS_STEPS, min(self.MAX_POS_STEPS, new_pos_steps))
 
         if self.pos == clamped_pos_steps:
-            print("Max limit reached, no move!")
+            self._log("Max limit reached, no move!")
             return
 
         self.pos = clamped_pos_steps
         self.command_queue.append(self.pos)
         self.update_display()
+        self._log(f"Queued relative move by {distance_mm:.3f} mm to {self.pos / self.STEPS_PER_MM:.3f} mm")
 
     def move_to_mm(self, target_mm):
         if target_mm is not None:
@@ -76,12 +93,13 @@ class StepperController:
             clamped_target_steps = max(self.MIN_POS_STEPS, min(self.MAX_POS_STEPS, target_steps))
 
             if self.pos == clamped_target_steps:
-                print("Max limit reached (or) already at target, no move!")
+                self._log("Max limit reached (or) already at target, no move!")
                 return
 
             self.pos = clamped_target_steps
             self.command_queue.append(self.pos)
             self.update_display()
+            self._log(f"Queued absolute move to {target_mm:.3f} mm")
 
     def _process_queue(self):
         if not self.is_busy and self.command_queue:
@@ -102,6 +120,10 @@ class StepperController:
         if self.arduino and self.arduino.in_waiting > 0:
             try:
                 line = self.arduino.readline().decode('ascii').strip()
+                
+                if line: #only if line is not empty
+                    self._log(f"<- {line}")
+
                 if line.startswith("POS:"):
                     loaded_pos = int(line[4:])
                     self.pos = loaded_pos
@@ -131,6 +153,7 @@ class StepperController:
             dpg.configure_item("pos_progress_bar", overlay=f"{mm_pos:.2f} / {self.MAX_RANGE_MM:.1f} mm")
 
     def stop(self):
+        self._log(f"STOP command issued")
         self.command_queue.clear()
         self.send_command('S')
         self.is_busy = False
@@ -151,8 +174,8 @@ class StepperController:
         if not (self.arduino and self.arduino.is_open):
             return
         
-        print("Sending command to save position to Arduino's EEPROM...")
-        self.arduino.read_all() #clear input buffer data
+        self._log("Attempting to save position to EEPROM")
+        self.arduino.read_all()
         self.send_command('P')
 
         start_time = time.time()
@@ -161,6 +184,7 @@ class StepperController:
                 try:
                     line = self.arduino.readline().decode('ascii').strip()
                     if line == 'SAVED':
+                        self._log(f"<- SAVED (Position: {self.pos} steps)")
                         print(f"Confirmation received: Position saved ({self.pos} steps)")
                         return
                 except (UnicodeDecodeError, ValueError):
@@ -168,7 +192,7 @@ class StepperController:
         print("Warning: did not recieve confirmation from arduino") 
 
     def load_position_from_eeprom(self):
-        print("Requesting saved position from Arduino's EEPROM...")
+        self._log("Requesting saved position from Arduino's EEPROM...")
         self.send_command('L')
     
     def close(self):
@@ -190,7 +214,7 @@ class StepperController:
         new_mm = dpg.get_value("set_pos_input_mm")
         if new_mm is not None:
             self.pos = int(new_mm * self.STEPS_PER_MM)
-            print(f"Calibrating position to {new_mm:.3f} mm ({self.pos} steps).")
+            self._log(f"Calibrating position to {new_mm:.3f} mm ({self.pos} steps).")
             self.send_command('C', self.pos)
             self.command_queue.clear()
             self.is_busy = False
@@ -295,6 +319,10 @@ with dpg.window(label="Control Panel", tag="main_window"):
         dpg.add_button(label="Calibrate Position", callback=controller.open_set_position_window)
         dpg.add_button(label="Save Position to Device", callback=controller.save_position_to_eeprom)
         dpg.add_button(label="Load Position from Device", callback=controller.load_position_from_eeprom)
+
+    dpg.add_separator()
+    dpg.add_text("Log")
+    dpg.add_input_text(tag="log_window", multiline=True, readonly=True, width=-1, height=150)
 
 controller.update_display()
 dpg.create_viewport(title="Stepper Motor Control", width=1000, height=750)
