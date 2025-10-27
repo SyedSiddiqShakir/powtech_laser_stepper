@@ -13,7 +13,7 @@ config.read('config.ini')
 
 #these values are passed when the class is called. Although embdedding inside the class could have also worked.
 port = config.get('Serial', 'port')
-baud = config.getint('Serial', 'port')
+baud = config.getint('Serial', 'baudrate')
 max_range = config.getfloat('Motor', 'max_range_mm')
 
 class StepperController:
@@ -22,7 +22,7 @@ class StepperController:
     STEPS_PER_REV = 1600
     MM_PER_REV = 0.5
     STEPS_PER_MM = STEPS_PER_REV / MM_PER_REV
-    MAX_RANGE_MM = 50.0
+    MAX_RANGE_MM = max_range
 
     def __init__(self, port='COM5', baudrate=115200):
         self.arduino = None
