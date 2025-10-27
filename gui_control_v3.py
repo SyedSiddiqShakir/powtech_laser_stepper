@@ -6,6 +6,15 @@ import win32api
 import win32con
 import win32gui
 from collections import deque
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+#these values are passed when the class is called. Although embdedding inside the class could have also worked.
+port = config.get('Serial', 'port')
+baud = config.getint('Serial', 'port')
+max_range = config.getfloat('Motor', 'max_range_mm')
 
 class StepperController:
     # constants
@@ -189,7 +198,7 @@ class StepperController:
             dpg.hide_item("set_pos_window")
 
 # init controller
-controller = StepperController()
+controller = StepperController(port=port, baudrate=baud)
 
 # windows shutdown and sleep events handlers
 def console_handler(event):
