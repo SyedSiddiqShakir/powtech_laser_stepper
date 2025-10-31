@@ -273,13 +273,19 @@ if controller.arduino is None:
     win32gui.UnregisterClass(class_atom, None)
     sys.exit()
     """
+# CORRECTED Error Handling Block
 if controller.arduino is None:
-    dpg.add_window(label="Connection Error", modal=True, show=True, tag="connection_error_window", width=400)
-    dpg.add_text("Failed to connect to Arduino on the specified port.")
-    dpg.add_text(f"Please check config.ini (Port: {port}) and ensure the device is connected.")
-    dpg.add_button(label="OK", callback=lambda: dpg.stop_dearpygui())
+    # Use 'with' to define the window and its contents
+    with dpg.window(label="Connection Error", modal=True, show=True, tag="connection_error_window", width=400):
+        dpg.add_text("Failed to connect to Arduino on the specified port.")
+        dpg.add_text(f"Please check config.ini (Port: {port}, Baud: {baud}) and ensure the device is connected.") # Also corrected baud variable name here
+        dpg.add_button(label="Exit", width=-1, callback=lambda: dpg.stop_dearpygui()) # Use Exit label, make button fill width
+
+    # Need to show viewport and start DPG even for the error
+    dpg.show_viewport()
     dpg.start_dearpygui()
-    sys.exit()
+    dpg.destroy_context() # Clean up DPG context after error window closes
+    sys.exit() # Exit the script cleanly
 
 with dpg.window(label="Control Panel", tag="main_window"):
     with dpg.group(horizontal=True):
