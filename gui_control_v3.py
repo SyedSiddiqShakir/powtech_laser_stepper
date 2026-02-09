@@ -1,6 +1,6 @@
 import serial
 import time
-import dearpygui.dearpygui as dpg
+import dearpygui.dearpygui as dpg # type: ignore
 import sys
 import win32api
 import win32con
